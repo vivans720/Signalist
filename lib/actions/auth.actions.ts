@@ -20,6 +20,7 @@ export const signUpWithEmail = async ({
         password,
         name: fullName,
       },
+      headers: await headers(),
     });
 
     if (response) {
@@ -38,8 +39,10 @@ export const signUpWithEmail = async ({
 
     return { success: true, data: response };
   } catch (e) {
-    console.log("Sign up failed", e);
-    return { success: false, error: "Sign up failed" };
+    console.error("Sign up failed", e);
+    const errorMessage =
+      e instanceof Error ? e.message : "An unexpected error occurred";
+    return { success: false, error: errorMessage };
   }
 };
 export const signInWithEmail = async ({ email, password }: SignInFormData) => {

@@ -39,12 +39,16 @@ const SignUp = () => {
       const result = await signUpWithEmail(data);
       if (result.success) {
         router.push("/");
+      } else {
+        toast.error("Sign up failed", {
+          description: result.error || "Failed to create an account",
+        });
       }
     } catch (e) {
       console.error(e);
       toast.error("Sign up failed", {
         description:
-          e instanceof Error ? e.message : "Failed to create an aacount",
+          e instanceof Error ? e.message : "Failed to create an account",
       });
     }
   };
@@ -59,7 +63,13 @@ const SignUp = () => {
           placeholder="John Doe"
           register={register}
           error={errors.fullName}
-          validation={{ required: "Full Name is required", minLength: 2 }}
+          validation={{
+            required: "Full Name is required",
+            minLength: {
+              value: 2,
+              message: "Full Name must be at least 2 characters",
+            },
+          }}
         />
         <InputField
           name="email"
@@ -69,8 +79,10 @@ const SignUp = () => {
           error={errors.email}
           validation={{
             required: "Email is required",
-            pattern: /^\S+@\S+$/i,
-            message: "Invalid email address",
+            pattern: {
+              value: /^\S+@\S+$/i,
+              message: "Invalid email address",
+            },
           }}
         />
         <InputField
@@ -80,7 +92,13 @@ const SignUp = () => {
           register={register}
           type="password"
           error={errors.password}
-          validation={{ required: "Password is required", minLength: 8 }}
+          validation={{
+            required: "Password is required",
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters",
+            },
+          }}
         />
 
         <CountrySelectField
