@@ -3,21 +3,20 @@
 import { useEffect, useState } from "react";
 import {
   CommandDialog,
+  CommandEmpty,
   CommandInput,
   CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
 } from "@/components/ui/command";
-import { Button } from "./ui/button";
-import { Loader2, Star, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { searchStocks } from "@/lib/actions/finnhub.actions";
 import { useDebounce } from "@/hooks/useDebounce";
+import WatchlistButton from "./WatchlistButton";
 
 export default function SearchCommand({
   renderAs = "button",
-  label = "Add Stock",
+  label = "Add stock",
   initialStocks,
 }: SearchCommandProps) {
   const [open, setOpen] = useState(false);
@@ -28,16 +27,16 @@ export default function SearchCommand({
 
   const isSearchMode = !!searchTerm.trim();
   const displayStocks = isSearchMode ? stocks : stocks?.slice(0, 10);
+
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setOpen((open) => !open);
+        setOpen((v) => !v);
       }
     };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const handleSearch = async () => {
@@ -60,11 +59,20 @@ export default function SearchCommand({
     debouncedSearch();
   }, [searchTerm]);
 
-
-  const handleSelectStock = (symbol: string) => {
+  const handleSelectStock = () => {
     setOpen(false);
     setSearchTerm("");
     setStocks(initialStocks);
+  };
+
+  // Handle watchlist changes status change
+  const handleWatchlistChange = async (symbol: string, isAdded: boolean) => {
+    // Update current stocks
+    setStocks(
+      initialStocks?.map((stock) =>
+        stock.symbol === symbol ? { ...stock, isInWatchlist: isAdded } : stock
+      ) || []
+    );
   };
 
   return (
@@ -85,18 +93,17 @@ export default function SearchCommand({
       >
         <div className="search-field">
           <CommandInput
-            placeholder="Search stocks..."
             value={searchTerm}
             onValueChange={setSearchTerm}
+            placeholder="Search stocks..."
             className="search-input"
           />
           {loading && <Loader2 className="search-loader" />}
         </div>
-
         <CommandList className="search-list">
           {loading ? (
             <CommandEmpty className="search-list-empty">
-              Loading Stocks ...
+              Loading stocks...
             </CommandEmpty>
           ) : displayStocks?.length === 0 ? (
             <div className="search-list-indicator">
@@ -108,8 +115,7 @@ export default function SearchCommand({
                 {isSearchMode ? "Search results" : "Popular stocks"}
                 {` `}({displayStocks?.length || 0})
               </div>
-
-              {displayStocks.map((stock, i) => (
+              {displayStocks?.map((stock, i) => (
                 <li key={stock.symbol} className="search-item">
                   <Link
                     href={`/stocks/${stock.symbol}`}
@@ -123,23 +129,18 @@ export default function SearchCommand({
                         {stock.symbol} | {stock.exchange} | {stock.type}
                       </div>
                     </div>
-                    <Star/>
+                    <WatchlistButton
+                      symbol={stock.symbol}
+                      company={stock.name}
+                      isInWatchlist={stock.isInWatchlist}
+                      type="icon"
+                      onWatchlistChange={handleWatchlistChange}
+                    />
                   </Link>
                 </li>
               ))}
             </ul>
           )}
-          {/* <CommandGroup heading="Suggestions">
-            <CommandItem onSelect={() => handleSelectStock("AAPL")}>
-              AAPL - Apple Inc.
-            </CommandItem>
-            <CommandItem onSelect={() => handleSelectStock("GOOGL")}>
-              GOOGL - Alphabet Inc.
-            </CommandItem>
-            <CommandItem onSelect={() => handleSelectStock("MSFT")}>
-              MSFT - Microsoft Corporation
-            </CommandItem>
-          </CommandGroup> */}
         </CommandList>
       </CommandDialog>
     </>
